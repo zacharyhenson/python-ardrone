@@ -17,11 +17,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-import copy
-import logging
-
-
-
 """
 Python library for the AR.Drone.
 
@@ -29,7 +24,8 @@ V.1 This module was tested with Python 2.6.6 and AR.Drone vanilla firmware 1.5.1
 V.2.alpha
 """
 
-
+import copy
+import logging
 import socket
 import struct
 import sys
@@ -37,14 +33,12 @@ import threading
 import multiprocessing
 
 import arnetwork
-import arnetwork2
 
 import time
 import numpy as np
 from mutex import mutex
 
 __author__ = "Bastian Venthur"
-
 
 ARDRONE_NAVDATA_PORT = 5554
 ARDRONE_VIDEO_PORT = 5555
@@ -57,6 +51,7 @@ APP_ID = "21d958e4"
 
 DEBUG = True
 IMAGE_ENCODING = "ppm"
+
 
 class ARDrone(object):
     """ARDrone Class.
@@ -89,54 +84,53 @@ class ARDrone(object):
 
         self.at(at_config, "general:navdata_demo", "TRUE")
 
-        if (True):
+        self.at(at_config, "custom:session_id", SESSION_ID)
+        self.at(at_config, "custom:profile_id", USER_ID)
+        self.at(at_config, "custom:application_id", APP_ID)
+        self.at(at_config_ids, self.config_ids_string)
+        time.sleep(0.5)
+        self.at(at_config, "general:navdata_demo", "TRUE")
+        time.sleep(0.5)
+        self.at(at_config_ids, self.config_ids_string)
+        time.sleep(0.5)
+        self.at(at_config, "general:video_enable", "TRUE")
+        time.sleep(0.5)
+        logging.info("Waiting 1s and sending request for controls")
+        time.sleep(0.5)
 
-            self.at(at_config, "custom:session_id", SESSION_ID)
-            self.at(at_config, "custom:profile_id", USER_ID)
-            self.at(at_config, "custom:application_id", APP_ID)
-            self.at(at_config_ids, self.config_ids_string)
-            time.sleep(0.5)
-            self.at(at_config, "general:navdata_demo", "TRUE")
-            time.sleep(0.5)
-            self.at(at_config_ids, self.config_ids_string)
-            time.sleep(0.5)
-            self.at(at_config, "general:video_enable", "TRUE")
-            time.sleep(0.5)
-            logging.info("Waiting 1s and sending request for controls")
-            time.sleep(0.5)
+        self.at(at_config_ids , self.config_ids_string)
+        self.at(at_config, "custom:session_id", SESSION_ID)
+        time.sleep(0.5)
 
-            self.at(at_config_ids , self.config_ids_string)
-            self.at(at_config, "custom:session_id", SESSION_ID)
-            time.sleep(0.5)
+        self.at(at_config_ids , self.config_ids_string)
+        self.at(at_config, "custom:profile_id", USER_ID)
+        time.sleep(0.5)
 
-            self.at(at_config_ids , self.config_ids_string)
-            self.at(at_config, "custom:profile_id", USER_ID)
-            time.sleep(0.5)
+        self.at(at_config_ids , self.config_ids_string)
+        self.at(at_config, "custom:application_id", APP_ID)
+        time.sleep(0.5)
 
-            self.at(at_config_ids , self.config_ids_string)
-            self.at(at_config, "custom:application_id", APP_ID)
-            time.sleep(0.5)
+        self.at(at_config_ids , self.config_ids_string)
+        self.at(at_config, "video:bitrate_control_mode", "1")
+        time.sleep(0.5)
 
-            self.at(at_config_ids , self.config_ids_string)
-            self.at(at_config, "video:bitrate_control_mode", "1")
-            time.sleep(0.5)
+        self.at(at_config_ids , self.config_ids_string)
+        self.at(at_config, "video:bitrate", "10000")
+        time.sleep(0.5)
 
-            self.at(at_config_ids , self.config_ids_string)
-            self.at(at_config, "video:bitrate", "10000")
-            time.sleep(0.5)
+        self.at(at_config_ids , self.config_ids_string)
+        self.at(at_config, "video:max_bitrate", "10000")
+        time.sleep(0.5)
 
-            self.at(at_config_ids , self.config_ids_string)
-            self.at(at_config, "video:max_bitrate", "10000")
-            time.sleep(0.5)
+        self.at(at_config_ids , self.config_ids_string)
+        self.at(at_config, "video:codec_fps", "30")
+        time.sleep(0.5)
 
-            self.at(at_config_ids , self.config_ids_string)
-            self.at(at_config, "video:codec_fps", "30")
-            time.sleep(0.5)
+        self.at(at_config_ids , self.config_ids_string)
+        self.at(at_config, "video:video_codec", 0x81)
+        time.sleep(0.5)
 
-            self.at(at_config_ids , self.config_ids_string)
-            self.at(at_config, "video:video_codec", 0x81)
-            time.sleep(0.5)
-
+        self.last_command_is_hovering = True
 
         self.video_pipe, video_pipe_other = multiprocessing.Pipe()
         self.nav_pipe, nav_pipe_other = multiprocessing.Pipe()
@@ -145,17 +139,12 @@ class ARDrone(object):
         self.network_process = arnetwork.ARDroneNetworkProcess(nav_pipe_other, video_pipe_other, com_pipe_other, is_ar_drone_2)
         self.network_process.start()
 
-        #self.network_process = arnetwork2.ARDroneNetworkProcess(nav_pipe_other, video_pipe_other, com_pipe_other, is_ar_drone_2, self)
-        #self.network_process.run()
+        self.ipc_thread = arnetwork.IPCThread(self)
+        self.ipc_thread.start()
 
-        ipc_thread = True
-        if ipc_thread:
-            self.ipc_thread = arnetwork.IPCThread(self)
-            self.ipc_thread.start()
-
-        self.image = np.zeros((100, 100))
+        self.image = np.zeros((360, 480, 3), np.uint8)
         self.navdata = dict()
-
+        self.navdata[0] = dict(zip(['ctrl_state', 'battery', 'theta', 'phi', 'psi', 'altitude', 'vx', 'vy', 'vz', 'num_frames'], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
         self.time = 0
 
 
@@ -283,6 +272,48 @@ class ARDrone(object):
         self.lock.acquire()
         self.image = np.asarray(_image)
         self.lock.release()
+
+    def apply_command(self, command):
+        available_commands = ["emergency",
+        "land", "takeoff", "move_left", "move_right", "move_down", "move_up",
+        "move_backward", "move_forward", "turn_left", "turn_right", "hover"]
+        if command not in available_commands:
+            logging.error("Command %s is not a recognized command" % command)
+
+        if command != "hover":
+            self.last_command_is_hovering = False
+
+        if (command == "emergency"):
+            self.reset()
+        elif (command == "land"):
+            self.land()
+            self.last_command_is_hovering = True
+        elif (command == "takeoff"):
+            self.takeoff()
+            self.last_command_is_hovering = True
+        elif (command == "move_left"):
+            self.move_left()
+        elif (command == "move_right"):
+            self.move_right()
+        elif (command == "move_down"):
+            self.move_down()
+        elif (command == "move_up"):
+            self.move_up()
+        elif (command == "move_backward"):
+            self.move_backward()
+        elif (command == "move_forward"):
+            self.move_forward()
+        elif (command == "turn_left"):
+            self.turn_left()
+        elif (command == "turn_right"):
+            self.turn_right()
+        elif (command == "hover" and not self.last_command_is_hovering):
+            self.hover()
+            self.last_command_is_hovering = True
+
+class ARDrone2(ARDrone):
+    def __init__(self):
+        ARDrone.__init__(self, True)
 
 ###############################################################################
 ### Low level AT Commands
@@ -480,6 +511,7 @@ def decode_navdata(packet):
     data['seq_nr'] = _[2]
     data['vision_flag'] = _[3]
     offset += struct.calcsize("IIII")
+    has_flying_information = False
     while 1:
         try:
             id_nr, size = struct.unpack_from("HH", packet, offset)
@@ -492,6 +524,7 @@ def decode_navdata(packet):
             offset += struct.calcsize("c")
         # navdata_tag_t in navdata-common.h
         if id_nr == 0:
+            has_flying_information = True
             values = struct.unpack_from("IIfffffffI", "".join(values))
             values = dict(zip(['ctrl_state', 'battery', 'theta', 'phi', 'psi', 'altitude', 'vx', 'vy', 'vz', 'num_frames'], values))
             # convert the millidegrees into degrees and round to int, as they
@@ -499,11 +532,16 @@ def decode_navdata(packet):
             for i in 'theta', 'phi', 'psi':
                 values[i] = int(values[i] / 1000)
         data[id_nr] = values
-    return data
+
+
+
+    return data, has_flying_information
 
 
 if __name__ == "__main__":
-
+    '''
+    For testing purpose only
+    '''
     import termios
     import fcntl
     import os

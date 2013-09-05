@@ -29,11 +29,8 @@ import socket
 import threading
 import multiprocessing
 import Image
-import numpy as np
 import StringIO
-
 import libardrone
-import time
 
 class ARDroneNetworkProcess(multiprocessing.Process):
     """ARDrone Network Process.
@@ -109,8 +106,9 @@ class ARDroneNetworkProcess(multiprocessing.Process):
                             # we consumed every packet from the socket and
                             # continue with the last one
                             break
-                    navdata = libardrone.decode_navdata(data)
-                    self.nav_pipe.send(navdata)
+                    navdata, has_information = libardrone.decode_navdata(data)
+                    if (has_information):
+                        self.nav_pipe.send(navdata)
                 elif i == self.com_pipe:
                     _ = self.com_pipe.recv()
                     stopping = True
