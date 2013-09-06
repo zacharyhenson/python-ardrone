@@ -49,7 +49,7 @@ SESSION_ID = "943dac23"
 USER_ID = "36355d78"
 APP_ID = "21d958e4"
 
-DEBUG = True
+DEBUG = False
 IMAGE_ENCODING = "ppm"
 
 
@@ -80,57 +80,25 @@ class ARDrone(object):
         self.com_watchdog_timer = threading.Timer(self.timer_t, self.commwdg)
         self.lock = threading.Lock()
         self.speed = 0.2
+
+        time.sleep(0.5)
         self.config_ids_string = [SESSION_ID, USER_ID, APP_ID]
-
-        self.at(at_config, "general:navdata_demo", "TRUE")
-
-        self.at(at_config, "custom:session_id", SESSION_ID)
-        self.at(at_config, "custom:profile_id", USER_ID)
-        self.at(at_config, "custom:application_id", APP_ID)
-        self.at(at_config_ids, self.config_ids_string)
+        self.configure_multisession(SESSION_ID, USER_ID, APP_ID, self.config_ids_string)
+        self.set_session_id (self.config_ids_string, SESSION_ID)
         time.sleep(0.5)
-        self.at(at_config, "general:navdata_demo", "TRUE")
+        self.set_profile_id(self.config_ids_string, USER_ID)
         time.sleep(0.5)
-        self.at(at_config_ids, self.config_ids_string)
+        self.set_app_id(self.config_ids_string, APP_ID)
         time.sleep(0.5)
-        self.at(at_config, "general:video_enable", "TRUE")
+        self.set_video_bitrate_control_mode(self.config_ids_string, "1")
         time.sleep(0.5)
-        logging.info("Waiting 1s and sending request for controls")
+        self.set_video_bitrate(self.config_ids_string, "10000")
         time.sleep(0.5)
-
-        self.at(at_config_ids , self.config_ids_string)
-        self.at(at_config, "custom:session_id", SESSION_ID)
+        self.set_max_bitrate(self.config_ids_string, "10000")
         time.sleep(0.5)
-
-        self.at(at_config_ids , self.config_ids_string)
-        self.at(at_config, "custom:profile_id", USER_ID)
+        self.set_fps(self.config_ids_string, "30")
         time.sleep(0.5)
-
-        self.at(at_config_ids , self.config_ids_string)
-        self.at(at_config, "custom:application_id", APP_ID)
-        time.sleep(0.5)
-
-        self.at(at_config_ids , self.config_ids_string)
-        self.at(at_config, "video:bitrate_control_mode", "1")
-        time.sleep(0.5)
-
-        self.at(at_config_ids , self.config_ids_string)
-        self.at(at_config, "video:bitrate", "10000")
-        time.sleep(0.5)
-
-        self.at(at_config_ids , self.config_ids_string)
-        self.at(at_config, "video:max_bitrate", "10000")
-        time.sleep(0.5)
-
-        self.at(at_config_ids , self.config_ids_string)
-        self.at(at_config, "video:codec_fps", "30")
-        time.sleep(0.5)
-
-        self.at(at_config_ids , self.config_ids_string)
-        self.at(at_config, "video:video_codec", 0x81)
-        time.sleep(0.5)
-
-        self.last_command_is_hovering = True
+        self.set_video_codec(self.config_ids_string, 0x81)
 
         self.video_pipe, video_pipe_other = multiprocessing.Pipe()
         self.nav_pipe, nav_pipe_other = multiprocessing.Pipe()
@@ -142,10 +110,18 @@ class ARDrone(object):
         self.ipc_thread = arnetwork.IPCThread(self)
         self.ipc_thread.start()
 
-        self.image = np.zeros((360, 480, 3), np.uint8)
+        self.image_shape = (360, 640, 3)
+        self.image = np.zeros(self.image_shape, np.uint8)
         self.navdata = dict()
         self.navdata[0] = dict(zip(['ctrl_state', 'battery', 'theta', 'phi', 'psi', 'altitude', 'vx', 'vy', 'vz', 'num_frames'], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
         self.time = 0
+
+        self.last_command_is_hovering = True
+
+        time.sleep(1.0)
+
+        self.at(at_config_ids , self.config_ids_string)
+        self.at(at_config, "general:navdata_demo", "TRUE")
 
 
     def takeoff(self):
@@ -226,6 +202,43 @@ class ARDrone(object):
         self.com_watchdog_timer.start()
         self.lock.release()
 
+    def configure_multisession(self, session_id, user_id, app_id, config_ids_string):
+        self.at(at_config, "custom:session_id", session_id)
+        self.at(at_config, "custom:profile_id", user_id)
+        self.at(at_config, "custom:application_id", app_id)
+
+    def set_session_id (self, config_ids_string, session_id):
+        self.at(at_config_ids , config_ids_string)
+        self.at(at_config, "custom:session_id", session_id)
+
+    def set_profile_id (self, config_ids_string, profile_id):
+        self.at(at_config_ids , config_ids_string)
+        self.at(at_config, "custom:profile_id", profile_id)
+
+    def set_app_id (self, config_ids_string, app_id):
+        self.at(at_config_ids , config_ids_string)
+        self.at(at_config, "custom:application_id", app_id)
+
+    def set_video_bitrate_control_mode (self, config_ids_string, mode):
+        self.at(at_config_ids , config_ids_string)
+        self.at(at_config, "video:bitrate_control_mode", mode)
+
+    def set_video_bitrate (self, config_ids_string, bitrate):
+        self.at(at_config_ids , config_ids_string)
+        self.at(at_config, "video:bitrate", bitrate)
+
+    def set_max_bitrate(self, config_ids_string, max_bitrate):
+        self.at(at_config_ids , config_ids_string)
+        self.at(at_config, "video:max_bitrate", max_bitrate)
+
+    def set_fps (self, config_ids_string, fps):
+        self.at(at_config_ids , config_ids_string)
+        self.at(at_config, "video:codec_fps", fps)
+
+    def set_video_codec (self, config_ids_string, codec):
+        self.at(at_config_ids , config_ids_string)
+        self.at(at_config, "video:video_codec", codec)
+
     def commwdg(self):
         """Communication watchdog signal.
 
@@ -252,26 +265,20 @@ class ARDrone(object):
         self.lock.release()
 
     def get_image(self):
-        self.lock.acquire()
         _im = np.copy(self.image)
-        self.lock.release()
         return _im
 
     def get_navdata(self):
-        self.lock.acquire()
         _navdata = copy.deepcopy(self.navdata)
-        self.lock.release()
         return _navdata
 
     def set_navdata(self, _navdata):
-        self.lock.acquire()
         self.navdata = _navdata
-        self.lock.release()
 
     def set_image(self, _image):
-        self.lock.acquire()
-        self.image = np.asarray(_image)
-        self.lock.release()
+        _image = np.asarray(_image)
+        if (_image.shape == self.image_shape):
+            self.image = np.asarray(_image)
 
     def apply_command(self, command):
         available_commands = ["emergency",
@@ -525,7 +532,7 @@ def decode_navdata(packet):
         # navdata_tag_t in navdata-common.h
         if id_nr == 0:
             has_flying_information = True
-            values = struct.unpack_from("IIfffffffI", "".join(values))
+            values = struct.unpack_from("IIfffifffI", "".join(values))
             values = dict(zip(['ctrl_state', 'battery', 'theta', 'phi', 'psi', 'altitude', 'vx', 'vy', 'vz', 'num_frames'], values))
             # convert the millidegrees into degrees and round to int, as they
             # are not so precise anyways
@@ -618,7 +625,6 @@ if __name__ == "__main__":
                         print 'video enable= ', navdata['drone_state']['video_mask']
                         print 'vision enable= ', navdata['drone_state']['vision_mask']
                         print 'command_mask= ', navdata['drone_state']['command_mask']
-
                     except:
                         pass
 
