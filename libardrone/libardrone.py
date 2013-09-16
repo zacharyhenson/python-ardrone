@@ -24,7 +24,6 @@ V.1 This module was tested with Python 2.6.6 and AR.Drone vanilla firmware 1.5.1
 V.2.alpha
 """
 
-import copy
 import logging
 import socket
 import struct
@@ -50,7 +49,6 @@ USER_ID = "36355d78"
 APP_ID = "21d958e4"
 
 DEBUG = False
-IMAGE_ENCODING = "ppm"
 
 
 class ARDrone(object):
@@ -58,7 +56,7 @@ class ARDrone(object):
 
     Instanciate this class to control your drone and receive decoded video and
     navdata.
-    Possible value for video codec (Ardrone2):
+    Possible value for video codec (drone2):
       NULL_CODEC    = 0,
       UVLC_CODEC    = 0x20,       // codec_type value is used for START_CODE
       P264_CODEC    = 0x40,
@@ -73,13 +71,18 @@ class ARDrone(object):
       MP4_360P_H264_360P_CODEC = 0x88,
     """
 
-    def __init__(self, is_ar_drone_2=False):
+    def __init__(self, is_ar_drone_2=False, hd=False):
 
         self.seq_nr = 1
         self.timer_t = 0.2
         self.com_watchdog_timer = threading.Timer(self.timer_t, self.commwdg)
         self.lock = threading.Lock()
         self.speed = 0.2
+        self.hd = hd
+        if (self.hd):
+            self.image_shape = (720, 1280, 3)
+        else:
+            self.image_shape = (360, 640, 3)
 
         time.sleep(0.5)
         self.config_ids_string = [SESSION_ID, USER_ID, APP_ID]
@@ -98,22 +101,21 @@ class ARDrone(object):
         time.sleep(0.5)
         self.set_fps(self.config_ids_string, "30")
         time.sleep(0.5)
-        self.set_video_codec(self.config_ids_string, 0x81)
+        if (self.hd):
+            self.set_video_codec(self.config_ids_string, 0x83)
+        else:
+            self.set_video_codec(self.config_ids_string, 0x81)
 
-        self.video_pipe, video_pipe_other = multiprocessing.Pipe()
-        self.nav_pipe, nav_pipe_other = multiprocessing.Pipe()
+        self.last_command_is_hovering = True
         self.com_pipe, com_pipe_other = multiprocessing.Pipe()
 
-        self.network_process = arnetwork.ARDroneNetworkProcess(nav_pipe_other, video_pipe_other, com_pipe_other, is_ar_drone_2)
-        self.network_process.start()
-
-        self.ipc_thread = arnetwork.IPCThread(self)
-        self.ipc_thread.start()
-
-        self.image_shape = (360, 640, 3)
-        self.image = np.zeros(self.image_shape, np.uint8)
         self.navdata = dict()
         self.navdata[0] = dict(zip(['ctrl_state', 'battery', 'theta', 'phi', 'psi', 'altitude', 'vx', 'vy', 'vz', 'num_frames'], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+
+        self.network_process = arnetwork.ARDroneNetworkProcess(com_pipe_other, is_ar_drone_2, self)
+        self.network_process.start()
+
+        self.image = np.zeros(self.image_shape, np.uint8)
         self.time = 0
 
         self.last_command_is_hovering = True
@@ -269,16 +271,16 @@ class ARDrone(object):
         return _im
 
     def get_navdata(self):
-        _navdata = copy.deepcopy(self.navdata)
-        return _navdata
+        return self.navdata
 
-    def set_navdata(self, _navdata):
-        self.navdata = _navdata
+    def set_navdata(self, navdata):
+        self.navdata = navdata
+        self.get_navdata()
 
-    def set_image(self, _image):
-        _image = np.asarray(_image)
-        if (_image.shape == self.image_shape):
-            self.image = np.asarray(_image)
+    def set_image(self, image):
+        if (image.shape == self.image_shape):
+            self.image = image
+        self.image = image
 
     def apply_command(self, command):
         available_commands = ["emergency",
@@ -319,8 +321,8 @@ class ARDrone(object):
             self.last_command_is_hovering = True
 
 class ARDrone2(ARDrone):
-    def __init__(self):
-        ARDrone.__init__(self, True)
+    def __init__(self, hd=False):
+        ARDrone.__init__(self, True, hd)
 
 ###############################################################################
 ### Low level AT Commands
@@ -539,9 +541,6 @@ def decode_navdata(packet):
             for i in 'theta', 'phi', 'psi':
                 values[i] = int(values[i] / 1000)
         data[id_nr] = values
-
-
-
     return data, has_flying_information
 
 
@@ -567,7 +566,7 @@ if __name__ == "__main__":
 
     import cv2
     try:
-        startvideo = False
+        startvideo = True
         video_waiting = False
         while 1:
             time.sleep(.0001)
