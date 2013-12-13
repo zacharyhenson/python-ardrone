@@ -40,17 +40,11 @@ class ARVideo2(object):
         self._drone = drone
 
     """
-    Called by the PNG splitter when there's an image ready
+    Called by the H264 decoder when there's an image ready
     """
     def image_ready(self, image):
         self.latest_image = image
         self._drone.set_image(image)
-
-    """
-    Guaranteed to return an image as a PIL Image object.
-    """
-    def get_image(self):
-        return self.latest_image
 
     def write(self, data):
         self.paveparser.write(data)
