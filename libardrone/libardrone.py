@@ -262,8 +262,6 @@ class ARDrone(object):
         self.com_pipe.send('die!')
         self.network_process.terminate()
         self.network_process.join()
-        self.ipc_thread.stop()
-        self.ipc_thread.join()
         self.lock.release()
 
     def get_image(self):

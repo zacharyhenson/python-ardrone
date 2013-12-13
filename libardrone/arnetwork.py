@@ -40,6 +40,7 @@ class ARDroneNetworkProcess(threading.Thread):
         self._drone = drone
         self.com_pipe = com_pipe
         self.is_ar_drone_2 = is_ar_drone_2
+        self.stopping = False
         if is_ar_drone_2:
             import ar2video
             self.ar2video = ar2video.ARVideo2(self._drone, libardrone.DEBUG)
@@ -79,10 +80,10 @@ class ARDroneNetworkProcess(threading.Thread):
 
         video_socket, nav_socket, control_socket = _connect()
 
-        stopping = False
+        self.stopping = False
         connection_lost = 1
         reconnection_needed = False
-        while not stopping:
+        while not self.stopping:
             if reconnection_needed:
                 _disconnect(video_socket, nav_socket, control_socket)
                 video_socket, nav_socket, control_socket = _connect()
@@ -119,7 +120,7 @@ class ARDroneNetworkProcess(threading.Thread):
                         self._drone.set_navdata(navdata)
                 elif i == self.com_pipe:
                     _ = self.com_pipe.recv()
-                    stopping = True
+                    self.stopping = True
                     break
                 elif i == control_socket:
                     reconnection_needed = False
@@ -134,3 +135,6 @@ class ARDroneNetworkProcess(threading.Thread):
                         except IOError:
                             break
         _disconnect(video_socket, nav_socket, control_socket)
+
+    def terminate(self):
+        self.stopping = True
