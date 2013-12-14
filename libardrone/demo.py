@@ -32,13 +32,15 @@ import pygame
 import pygame.surfarray
 
 import pygame.transform
+import time
 import libardrone
+from threading import Thread
 
 def main():
     pygame.init()
-    W, H = 320, 240
+    W, H = 1280, 720
     screen = pygame.display.set_mode((W, H))
-    drone = libardrone.ARDrone(True)
+    drone = libardrone.ARDrone(True, True)
     drone.reset()
     clock = pygame.time.Clock()
     running = True
@@ -103,6 +105,10 @@ def main():
                     drone.speed = 0.9
                 elif event.key == pygame.K_0:
                     drone.speed = 1.0
+                elif event.key == pygame.K_x:
+                    t = Thread(target=fly_around_school, args=(drone, ))
+                    t.daemon = True
+                    t.start()
 
         try:
             # print pygame.image
@@ -127,6 +133,45 @@ def main():
     print "Shutting down...",
     drone.halt()
     print "Ok."
+
+def fly_around_school(drone):
+    print "Taking off"
+    drone.takeoff()
+    time.sleep(2.0)
+
+    print "Setting speed to 0.3"
+    drone.speed = 0.3
+    time.sleep(5.0)
+
+    for x in range(0,3):
+        print "Moving forwards..."
+        drone.move_forward()
+        time.sleep(2.0)
+
+    desired_rotation = (drone.navdata.get('psi') + 180) % 360
+    print "We want to turn to " + desired_rotation
+    print "Starting right turn and waiting a while..."  
+    drone.turn_right()
+    time.sleep(2.0)
+    print "Continuing to turn until rotation is as desired"
+    current_rotation = drone.navdata.get('psi')
+    while (current_rotation > desired_rotation and current_rotation < (desired_rotation - 20)):
+        print "Current rotation is "+current_rotation+", waiting a bit longer..."
+        current_rotation = drone.navdata.get('psi')
+        time.sleep(0.1)
+
+    print "Stopping turn..."
+    drone.turn_right()
+    time.sleep(1.0)
+
+    for x in range(0,3):
+        print "Moving forwards..."
+        drone.move_forward()
+        time.sleep(2.0)
+
+    print "Landing"
+    drone.land()
+    print "Landed."
 
 if __name__ == '__main__':
     main()
