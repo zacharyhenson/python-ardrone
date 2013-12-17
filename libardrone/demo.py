@@ -31,6 +31,7 @@ stream.
 import pygame
 import pygame.surfarray
 
+import pygame.transform
 import libardrone
 
 def main():
@@ -108,7 +109,8 @@ def main():
             pixelarray = drone.get_image()
             if pixelarray != None:
                 surface = pygame.surfarray.make_surface(pixelarray)
-                screen.blit(surface, (0, 0))
+                rotsurface = pygame.transform.rotate(surface, 270)
+                screen.blit(rotsurface, (0, 0))
             # battery status
             hud_color = (255, 0, 0) if drone.navdata.get('drone_state', dict()).get('emergency_mask', 1) else (10, 10, 255)
             bat = drone.navdata.get(0, dict()).get('battery', 0)
