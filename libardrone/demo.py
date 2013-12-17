@@ -143,35 +143,46 @@ def fly_around_school(drone):
     drone.speed = 0.3
     time.sleep(5.0)
 
-    for x in range(0,3):
+    for x in range(0,30):
         print "Moving forwards..."
         drone.move_forward()
-        time.sleep(2.0)
+        time.sleep(0.3)
 
-    desired_rotation = (drone.navdata.get('psi') + 180) % 360
-    print "We want to turn to " + desired_rotation
+    current_rotation = get_rotation(drone)
+    desired_rotation = (current_rotation + 180) % 360
+    print "Current rotation is " + str(current_rotation)
+    print "We want to turn to " + str(desired_rotation)
     print "Starting right turn and waiting a while..."  
-    drone.turn_right()
-    time.sleep(2.0)
+
+    for x in range(0,10):
+        current_rotation = get_rotation(drone)
+        print "Turning right a little: rotation now "+str(current_rotation)
+        drone.turn_right()
+        time.sleep(0.3)
+
+    time.sleep(1.0)
     print "Continuing to turn until rotation is as desired"
-    current_rotation = drone.navdata.get('psi')
-    while (current_rotation > desired_rotation and current_rotation < (desired_rotation - 20)):
-        print "Current rotation is "+current_rotation+", waiting a bit longer..."
-        current_rotation = drone.navdata.get('psi')
+    current_rotation = get_rotation(drone)
+    while (current_rotation > (desired_rotation+5) or current_rotation < (desired_rotation - 5)):
+        print "Current rotation is "+str(current_rotation)+", turning further..."
+        drone.turn_right()
+        current_rotation = get_rotation(drone)
         time.sleep(0.1)
 
     print "Stopping turn..."
-    drone.turn_right()
     time.sleep(1.0)
 
-    for x in range(0,3):
+    for x in range(0,30):
         print "Moving forwards..."
         drone.move_forward()
-        time.sleep(2.0)
+        time.sleep(0.3)
 
     print "Landing"
     drone.land()
     print "Landed."
+
+def get_rotation(drone):
+    return drone.navdata.get(0, dict()).get('psi', 0) % 360
 
 if __name__ == '__main__':
     main()
