@@ -155,18 +155,11 @@ def fly_around_school(drone):
     desired_rotation = (current_rotation + 180) % 360
     print "Current rotation is " + str(current_rotation)
     print "We want to turn to " + str(desired_rotation)
-    print "Starting left turn and waiting a while..." 
 
     for x in range(0,30):
-        print "Moving up a bit"
+        print "Flying a bit higher"
         drone.move_up()
         time.sleep(0.1)
-
-    for x in range(0,10):
-        current_rotation = get_rotation(drone)
-        print "Turning left a little: rotation now "+str(current_rotation)
-        drone.turn_left()
-        time.sleep(0.3)
 
     time.sleep(1.0)
     print "Continuing to turn until rotation is as desired"
