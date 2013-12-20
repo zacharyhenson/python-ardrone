@@ -12,6 +12,8 @@ Getting Started:
 ```
 
 The drone's property `image` contains always the latest image from the camera.
+At present this is in the format of a numpy array with dimensions (width, height, 3).
+This may change in future.
 The drone's property `navdata` contains always the latest navdata.
 
 
@@ -37,17 +39,20 @@ Here is a [video] of the library in action:
 Repository:
 -----------
 
-The public repository is located here:
+The public repository is located here for the AR.Drone 1.0:
 
   git://github.com/venthur/python-ardrone.git
 
+At present the AR.Drone 2.0 has a separate fork here:
+
+  git://github.com/adetaylor/python-ardrone.git
 
 Requirements:
 -------------
 
 This software was tested with the following setup:
 
-  * Python 2.6.6
+  * Python 2.7.6
   * Unmodified AR.Drone firmware 2.0
 
 
