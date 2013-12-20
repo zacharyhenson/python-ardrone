@@ -31,6 +31,7 @@ and lets you remote-control the drone with the keyboard:
     1,2,...,0   - speed
     UP/DOWN     - altitude
     LEFT/RIGHT  - turn left/right
+    x           - run demo script (see 'School lesson', below)
 
 Here is a [video] of the library in action:
 
@@ -63,3 +64,22 @@ This software is published under the terms of the MIT License:
 
   http://www.opensource.org/licenses/mit-license.php
 
+School lesson plan:
+-------------------
+
+Funnily enough, flying robot drones seem to get kids interested in programming.
+Here's a lesson plan which has been used with 10- and 11-year old kids in the UK.
+
+  1. Hide the AR.Drone
+  2. Show the [demo.py](libardrone/demo.py) `fly_around_school` code on a projector
+  3. Ask the kids to talk through the code and explain what it does, one line at a time
+  4. Show the drone ;-)
+  5. Fire up `demo.py` and press `x`
+  6. Be ready to press space when/if it comes close to any students. Seriously.
+  7. The program _inevitably_ won't work out of the box.
+  8. Debug it with the kids.
+  9. Ask for proposed improvements (e.g. flying higher) and ask the kids to propose how to write it. Try it.
+
+Step 9 is chaos but can easily fill an entire lesson.
+
+One note: things work much better if the drone can see objects below it. A school hall floor or carpet has insufficient contrast. Lay books or coats on the floor.
