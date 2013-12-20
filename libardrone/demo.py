@@ -38,11 +38,13 @@ from threading import Thread
 
 def main():
     pygame.init()
-    W, H = 1280, 720
+    W, H = 640, 480
     screen = pygame.display.set_mode((W, H))
-    drone = libardrone.ARDrone(True, True)
+    drone = libardrone.ARDrone(True)
     drone.reset()
     clock = pygame.time.Clock()
+    time.sleep(2.0)
+    drone.trim()
     running = True
     while running:
         for event in pygame.event.get():
@@ -136,14 +138,15 @@ def main():
 
 def fly_around_school(drone):
     print "Taking off"
+    drone.trim()
     drone.takeoff()
     time.sleep(2.0)
 
-    print "Setting speed to 0.3"
-    drone.speed = 0.3
+    print "Setting speed to 0.1"
+    drone.speed = 0.1
     time.sleep(5.0)
 
-    for x in range(0,30):
+    for x in range(0,10):
         print "Moving forwards..."
         drone.move_forward()
         time.sleep(0.3)
@@ -152,12 +155,17 @@ def fly_around_school(drone):
     desired_rotation = (current_rotation + 180) % 360
     print "Current rotation is " + str(current_rotation)
     print "We want to turn to " + str(desired_rotation)
-    print "Starting right turn and waiting a while..."  
+    print "Starting left turn and waiting a while..." 
+
+    for x in range(0,30):
+        print "Moving up a bit"
+        drone.move_up()
+        time.sleep(0.1)
 
     for x in range(0,10):
         current_rotation = get_rotation(drone)
-        print "Turning right a little: rotation now "+str(current_rotation)
-        drone.turn_right()
+        print "Turning left a little: rotation now "+str(current_rotation)
+        drone.turn_left()
         time.sleep(0.3)
 
     time.sleep(1.0)
@@ -165,14 +173,14 @@ def fly_around_school(drone):
     current_rotation = get_rotation(drone)
     while (current_rotation > (desired_rotation+5) or current_rotation < (desired_rotation - 5)):
         print "Current rotation is "+str(current_rotation)+", turning further..."
-        drone.turn_right()
+        drone.turn_left()
         current_rotation = get_rotation(drone)
         time.sleep(0.1)
 
     print "Stopping turn..."
     time.sleep(1.0)
 
-    for x in range(0,30):
+    for x in range(0,10):
         print "Moving forwards..."
         drone.move_forward()
         time.sleep(0.3)
@@ -182,7 +190,7 @@ def fly_around_school(drone):
     print "Landed."
 
 def get_rotation(drone):
-    return drone.navdata.get(0, dict()).get('psi', 0) % 360
+    return (drone.navdata.get(0, dict()).get('psi', 0)) % 360
 
 if __name__ == '__main__':
     main()
