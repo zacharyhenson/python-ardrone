@@ -16,11 +16,24 @@ At present this is in the format of a numpy array with dimensions (width, height
 This may change in future.
 The drone's property `navdata` contains always the latest navdata.
 
+There is also a simplified interface designed to match the standard Python
+`turtle` module:
+
+```python
+import ardrone_turtle
+
+takeoff()
+forward(10)
+left(180)
+forward(10)
+land()
+```
+
 
 Demo:
 -----
 
-There is also a demo application included which shows the video from the drone
+There is also a demo application, `demo.py`, included which shows the video from the drone
 and lets you remote-control the drone with the keyboard:
 
     RETURN      - takeoff
@@ -36,6 +49,11 @@ and lets you remote-control the drone with the keyboard:
 Here is a [video] of the library in action:
 
   [video]: http://youtu.be/2HEV37GbUow
+
+Turtle demo:
+------------
+
+A `demo2.py` script is included which uses the alternative turtle-compatible interface.
 
 Repository:
 -----------
@@ -83,3 +101,6 @@ Here's a lesson plan which has been used with 10- and 11-year old kids in the UK
 Step 9 is chaos but can easily fill an entire lesson.
 
 One note: things work much better if the drone can see objects below it. A school hall floor or carpet has insufficient contrast. Lay books or coats on the floor.
+
+More complex lessons, where the students write their own code, can be achieved by teaching the kids the standard `turtle` module and then converting to use the `ardrone_turtle` module included herein, which is supposed to have a roughly similar interface.
+
