@@ -243,6 +243,10 @@ class ARDrone(object):
         self.at(at_config_ids , config_ids_string)
         self.at(at_config, "video:bitrate", bitrate)
 
+    def set_video_channel(self, config_ids_string, channel):
+        self.at(at_config_ids , config_ids_string)
+        self.at(at_config, "video:channel", channel)
+
     def set_max_bitrate(self, config_ids_string, max_bitrate):
         self.at(at_config_ids , config_ids_string)
         self.at(at_config, "video:max_bitrate", max_bitrate)
