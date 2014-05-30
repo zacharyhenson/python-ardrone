@@ -202,6 +202,12 @@ class ARDrone(object):
         """
         self.speed = speed
 
+    def set_camera_view(self, downward):
+        """
+        Set which video camera is used. If 'downward' is true,
+        downward camera will be viewed - otherwise frontwards.
+        """
+        self.set_video_channel(self.config_ids_string, downward ? 0 : 1)
 
     def at(self, cmd, *args, **kwargs):
         """Wrapper for the low level at commands.
