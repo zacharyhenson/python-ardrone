@@ -207,7 +207,12 @@ class ARDrone(object):
         Set which video camera is used. If 'downward' is true,
         downward camera will be viewed - otherwise frontwards.
         """
-        self.set_video_channel(self.config_ids_string, downward ? 0 : 1)
+        channel = None
+        if downward:
+            channel = 0
+        else:
+            channel = 1
+        self.set_video_channel(self.config_ids_string, channel)
 
     def at(self, cmd, *args, **kwargs):
         """Wrapper for the low level at commands.
