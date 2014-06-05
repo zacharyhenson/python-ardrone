@@ -34,13 +34,19 @@ import pygame.surfarray
 import pygame.transform
 import time
 import libardrone
+import libfakeardrone
 from threading import Thread
+
+FAKE = 1
 
 def main():
     pygame.init()
     W, H = 640, 480
     screen = pygame.display.set_mode((W, H))
-    drone = libardrone.ARDrone(True)
+    if FAKE:
+        drone = libfakeardrone.ARDrone(True)
+    else:
+        drone = libardrone.ARDrone(True)
     drone.reset()
     clock = pygame.time.Clock()
     time.sleep(2.0)
