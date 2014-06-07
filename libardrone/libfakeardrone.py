@@ -2,6 +2,13 @@ __author__ = 'adrian'
 
 import numpy as np
 from PIL import Image
+import traceback
+import math
+import threading
+import time
+
+def radians(degrees):
+    return 0.0174532925 * (degrees % 360)
 
 """
 Like libardrone, but not real.
@@ -12,7 +19,7 @@ class ARDrone(object):
     def __init__(self, is_ar_drone_2=False, hd=False):
         self.navdata = dict()
         self.navdata[0] = dict(zip(['ctrl_state', 'battery', 'theta', 'phi', 'psi', 'altitude', 'vx', 'vy', 'vz', 'num_frames'], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
-        self.speed = 0.2
+        self.speed = 1
         self.hd = hd
         if (self.hd):
             self.image_shape = (720, 1280, 3)
@@ -21,62 +28,113 @@ class ARDrone(object):
         self.overall_image = Image.open("/Users/adrian/Desktop/before.png")
         self.pos = [0, 0, 0]
         self.heading = 0
+        self.delta_pos = [0, 0, 0]
+        self.delta_heading = 0
+        self.lock = threading.Lock()
+        self.thread = None
+
+    def navdata_lock(self):
+        class AcquiredLock(object):
+            def __init__(self, lock):
+                self.lock = lock
+
+            def __enter__(self):
+                self.lock.acquire()
+
+            def __exit__(self, exc_type, exc_val, exc_tb):
+                self.lock.release()
+
+        return AcquiredLock(self.lock)
 
     def takeoff(self):
         """Make the drone takeoff."""
-        self.pos[2] += 10
+        if self.thread != None:
+            return
+        self.pos[2] = 10
+        self.delta_pos = [0,0,0]
+        self.delta_heading = 0
+        self.cease_flying = False
+        self.thread = threading.Thread(target=ARDrone.do_flying, args=(self,))
+        self.thread.daemon = True
+        self.thread.start()
+
+    def do_flying(self):
+        while not self.cease_flying or self.pos[2] == 0:
+            with self.navdata_lock():
+                self.pos[0] += self.delta_pos[0]
+                self.pos[1] += self.delta_pos[1]
+                self.pos[2] += self.delta_pos[2]
+                print("Delta pos is %d,%d,%d" % (self.delta_pos[0], self.delta_pos[1], self.delta_pos[2]))
+                if self.pos[2] < 0:
+                    self.pos[2] = 0
+                self.heading += self.delta_heading
+                self.heading = self.heading % 360
+            time.sleep(0.1)
+            print("it")
+        self.thread = None
 
     def land(self):
         """Make the drone land."""
-        self.pos[2] -= 10
-        if self.pos[2] < 0:
-            self.pos[2] = 0
+        with self.navdata_lock():
+            self.delta_pos[2] = -10
 
     def hover(self):
         """Make the drone hover."""
-        pass
+        with self.navdata_lock():
+            self.delta_pos = [0, 0, 0]
+            self.delta_heading = 0
 
     def move_left(self):
         """Make the drone move left."""
-        pass
+        with self.navdata_lock():
+            self.delta_pos[0] += self.speed * math.sin(radians(self.heading - 90))
+            self.delta_pos[1] += self.speed * math.cos(radians(self.heading - 90))
+        print("Delta pos is %d" % (self.delta_pos[0]))
 
     def move_right(self):
         """Make the drone move right."""
-        pass
-        #self.at(at_pcmd, True, self.speed, 0, 0, 0)
+        with self.navdata_lock():
+            self.delta_pos[0] += self.speed * math.sin(radians(self.heading + 90))
+            self.delta_pos[1] += self.speed * math.cos(radians(self.heading + 90))
 
     def move_up(self):
         """Make the drone rise upwards."""
-        pass
-        #self.at(at_pcmd, True, 0, 0, self.speed, 0)
+        with self.navdata_lock():
+            self.delta_pos[2] += self.speed
 
     def move_down(self):
-        """Make the drone decent downwards."""
-        pass
-        #self.at(at_pcmd, True, 0, 0, -self.speed, 0)
+        """Make the drone decend downwards."""
+        with self.navdata_lock():
+            self.delta_pos[2] -= self.speed
 
     def move_forward(self):
         """Make the drone move forward."""
-        pass
-        #self.at(at_pcmd, True, 0, -self.speed, 0, 0)
+        with self.navdata_lock():
+            self.delta_pos[0] += self.speed * math.sin(radians(self.heading))
+            self.delta_pos[1] += self.speed * math.cos(radians(self.heading))
 
     def move_backward(self):
         """Make the drone move backwards."""
-        pass
-        #self.at(at_pcmd, True, 0, self.speed, 0, 0)
+        with self.navdata_lock():
+            self.delta_pos[0] -= self.speed * math.sin(radians(self.heading))
+            self.delta_pos[1] -= self.speed * math.cos(radians(self.heading))
 
     def turn_left(self):
         """Make the drone rotate left."""
-        pass
-        #self.at(at_pcmd, True, 0, 0, 0, -self.speed)
+        with self.navdata_lock():
+            self.delta_heading -= (self.speed * 15)
+            self.delta_heading = (self.delta_heading % 360)
 
     def turn_right(self):
         """Make the drone rotate right."""
-        pass
-        #self.at(at_pcmd, True, 0, 0, 0, self.speed)
+        with self.navdata_lock():
+            self.delta_heading += (self.speed * 15)
+            self.delta_heading = (self.delta_heading % 360)
 
     def reset(self):
-        pass
+        self.cease_flying = True
+        if self.thread:
+            self.thread.join()
 
     def trim(self):
         pass
@@ -86,7 +144,8 @@ class ARDrone(object):
 
         Valid values are floats from [0..1]
         """
-        self.speed = speed
+        with self.navdata_lock():
+            self.speed = speed
 
     def configure_multisession(self, session_id, user_id, app_id, config_ids_string):
         pass
@@ -122,12 +181,32 @@ class ARDrone(object):
         pass
 
     def get_image(self):
-        this_image = self.overall_image.rotate(-self.heading)
-        altitude = self.pos[2]
-        this_image = this_image.resize((self.overall_image.size[0] / altitude, self.overall_image.size[1] / altitude))
-        this_image = this_image.crop(0, 0, self.pos[0], self.pos[1])
-        _im = np.array(this_image).reshape(self.image_shape)
-        return _im
+        try:
+            altitude = self.pos[2]
+            if altitude == 0:
+                return np.zeros(self.image_shape)
+            fraction_of_image_we_want_to_see = 1
+            if altitude < 100:
+                fraction_of_image_we_want_to_see = altitude / 100.0
+            desired_width = int(self.overall_image.size[0] * fraction_of_image_we_want_to_see)
+            desired_height = int(self.overall_image.size[1] * fraction_of_image_we_want_to_see)
+            # First crop to twice the area which we want to see
+            this_image = self.overall_image.crop((int(self.pos[0] - desired_width), int(self.pos[1] - desired_height),
+                                                  int(self.pos[0] + desired_width), int(self.pos[1] + desired_height)))
+            # Then rotate
+            rotation_angle = int(-self.heading % 360)
+            if rotation_angle != 0:
+                this_image = this_image.rotate(rotation_angle)
+            # Now halve its size
+            this_image = this_image.crop((int(this_image.size[0]/4), int(this_image.size[1]/4),
+                                          int(3*this_image.size[0]/4), int(3*this_image.size[1]/4)))
+            this_image = this_image.resize((self.image_shape[1], self.image_shape[0]))
+            _im = np.array(this_image)
+            # Strip alpha channel
+            _im = np.delete(_im, 3, 2)
+            return _im.reshape(self.image_shape)
+        except:
+            traceback.print_exc()
 
     def get_navdata(self):
         return self.navdata
