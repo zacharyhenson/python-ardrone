@@ -20,7 +20,7 @@ class ARDrone(object):
     def __init__(self, is_ar_drone_2=False, hd=False):
         self.navdata = dict()
         self.navdata[0] = dict(zip(['ctrl_state', 'battery', 'theta', 'phi', 'psi', 'altitude', 'vx', 'vy', 'vz', 'num_frames'], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
-        self.speed = 1
+        self.speed = 0.1
         self.hd = hd
         if (self.hd):
             self.image_shape = (720, 1280, 3)
@@ -29,7 +29,7 @@ class ARDrone(object):
         image_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), "fakeground.png")
         self.overall_image = Image.open(image_filename)
         self.pos = [0, 0, 0]
-        self.heading = 0
+        self.navdata['battery'] = 1
         self.delta_pos = [0, 0, 0]
         self.delta_heading = 0
         self.lock = threading.Lock()
@@ -61,7 +61,7 @@ class ARDrone(object):
         self.thread.start()
 
     def do_flying(self):
-        while not self.cease_flying or self.pos[2] == 0:
+        while (not self.cease_flying) and (self.pos[2] > 0):
             with self.navdata_lock():
                 self.pos[0] += self.delta_pos[0]
                 self.pos[1] += self.delta_pos[1]
@@ -69,8 +69,8 @@ class ARDrone(object):
                 print("Delta pos is %d,%d,%d" % (self.delta_pos[0], self.delta_pos[1], self.delta_pos[2]))
                 if self.pos[2] < 0:
                     self.pos[2] = 0
-                self.heading += self.delta_heading
-                self.heading = self.heading % 360
+                self.navdata[0]['psi'] += self.delta_heading
+                self.navdata[0]['psi'] = self.navdata[0]['psi'] % 360
             time.sleep(0.1)
             print("it")
         self.thread = None
@@ -89,48 +89,48 @@ class ARDrone(object):
     def move_left(self):
         """Make the drone move left."""
         with self.navdata_lock():
-            self.delta_pos[0] += self.speed * math.sin(radians(self.heading - 90))
-            self.delta_pos[1] += self.speed * math.cos(radians(self.heading - 90))
+            self.delta_pos[0] = self.speed * math.sin(radians(self.navdata[0]['psi'] - 90))
+            self.delta_pos[1] = self.speed * math.cos(radians(self.navdata[0]['psi'] - 90))
         print("Delta pos is %d" % (self.delta_pos[0]))
 
     def move_right(self):
         """Make the drone move right."""
         with self.navdata_lock():
-            self.delta_pos[0] += self.speed * math.sin(radians(self.heading + 90))
-            self.delta_pos[1] += self.speed * math.cos(radians(self.heading + 90))
+            self.delta_pos[0] = self.speed * math.sin(radians(self.navdata[0]['psi'] + 90))
+            self.delta_pos[1] = self.speed * math.cos(radians(self.navdata[0]['psi'] + 90))
 
     def move_up(self):
         """Make the drone rise upwards."""
         with self.navdata_lock():
-            self.delta_pos[2] += self.speed
+            self.delta_pos[2] = self.speed
 
     def move_down(self):
         """Make the drone decend downwards."""
         with self.navdata_lock():
-            self.delta_pos[2] -= self.speed
+            self.delta_pos[2] = -self.speed
 
     def move_forward(self):
         """Make the drone move forward."""
         with self.navdata_lock():
-            self.delta_pos[0] += self.speed * math.sin(radians(self.heading))
-            self.delta_pos[1] += self.speed * math.cos(radians(self.heading))
+            self.delta_pos[0] = 20 * self.speed * math.sin(radians(self.navdata[0]['psi']))
+            self.delta_pos[1] = 20 * self.speed * math.cos(radians(self.navdata[0]['psi']))
 
     def move_backward(self):
         """Make the drone move backwards."""
         with self.navdata_lock():
-            self.delta_pos[0] -= self.speed * math.sin(radians(self.heading))
-            self.delta_pos[1] -= self.speed * math.cos(radians(self.heading))
+            self.delta_pos[0] = 20 * self.speed * math.sin(radians(self.navdata[0]['psi']))
+            self.delta_pos[1] = 20 * self.speed * math.cos(radians(self.navdata[0]['psi']))
 
     def turn_left(self):
         """Make the drone rotate left."""
         with self.navdata_lock():
-            self.delta_heading -= (self.speed * 15)
+            self.delta_heading -= (self.speed * 30)
             self.delta_heading = (self.delta_heading % 360)
 
     def turn_right(self):
         """Make the drone rotate right."""
         with self.navdata_lock():
-            self.delta_heading += (self.speed * 15)
+            self.delta_heading += (self.speed * 30)
             self.delta_heading = (self.delta_heading % 360)
 
     def reset(self):
@@ -196,7 +196,7 @@ class ARDrone(object):
             this_image = self.overall_image.crop((int(self.pos[0] - desired_width), int(self.pos[1] - desired_height),
                                                   int(self.pos[0] + desired_width), int(self.pos[1] + desired_height)))
             # Then rotate
-            rotation_angle = int(-self.heading % 360)
+            rotation_angle = int(-self.navdata[0]['psi'] % 360)
             if rotation_angle != 0:
                 this_image = this_image.rotate(rotation_angle)
             # Now halve its size
