@@ -28,7 +28,7 @@ class ARDrone(object):
             self.image_shape = (360, 640, 3)
         image_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), "fakeground.png")
         self.overall_image = Image.open(image_filename)
-        self.pos = [0, 0, 0]
+        self.pos = [self.overall_image.size[0]/2, self.overall_image.size[1]/2, 0]
         self.navdata['battery'] = 1
         self.delta_pos = [0, 0, 0]
         self.lock = threading.Lock()
