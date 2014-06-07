@@ -31,7 +31,6 @@ class ARDrone(object):
         self.pos = [0, 0, 0]
         self.navdata['battery'] = 1
         self.delta_pos = [0, 0, 0]
-        self.delta_heading = 0
         self.lock = threading.Lock()
         self.thread = None
 
@@ -54,7 +53,6 @@ class ARDrone(object):
             return
         self.pos[2] = 10
         self.delta_pos = [0,0,0]
-        self.delta_heading = 0
         self.cease_flying = False
         self.thread = threading.Thread(target=ARDrone.do_flying, args=(self,))
         self.thread.daemon = True
@@ -66,13 +64,9 @@ class ARDrone(object):
                 self.pos[0] += self.delta_pos[0]
                 self.pos[1] += self.delta_pos[1]
                 self.pos[2] += self.delta_pos[2]
-                print("Delta pos is %d,%d,%d" % (self.delta_pos[0], self.delta_pos[1], self.delta_pos[2]))
                 if self.pos[2] < 0:
                     self.pos[2] = 0
-                self.navdata[0]['psi'] += self.delta_heading
-                self.navdata[0]['psi'] = self.navdata[0]['psi'] % 360
             time.sleep(0.1)
-            print("it")
         self.thread = None
 
     def land(self):
@@ -84,7 +78,6 @@ class ARDrone(object):
         """Make the drone hover."""
         with self.navdata_lock():
             self.delta_pos = [0, 0, 0]
-            self.delta_heading = 0
 
     def move_left(self):
         """Make the drone move left."""
@@ -112,8 +105,8 @@ class ARDrone(object):
     def move_forward(self):
         """Make the drone move forward."""
         with self.navdata_lock():
-            self.delta_pos[0] = 20 * self.speed * math.sin(radians(self.navdata[0]['psi']))
-            self.delta_pos[1] = 20 * self.speed * math.cos(radians(self.navdata[0]['psi']))
+            self.delta_pos[0] = -20 * self.speed * math.sin(radians(self.navdata[0]['psi']))
+            self.delta_pos[1] = -20 * self.speed * math.cos(radians(self.navdata[0]['psi']))
 
     def move_backward(self):
         """Make the drone move backwards."""
@@ -124,14 +117,14 @@ class ARDrone(object):
     def turn_left(self):
         """Make the drone rotate left."""
         with self.navdata_lock():
-            self.delta_heading -= (self.speed * 30)
-            self.delta_heading = (self.delta_heading % 360)
+            self.navdata[0]['psi'] -= (self.speed * 30)
+            self.navdata[0]['psi'] = (self.navdata[0]['psi'] % 360)
 
     def turn_right(self):
         """Make the drone rotate right."""
         with self.navdata_lock():
-            self.delta_heading += (self.speed * 30)
-            self.delta_heading = (self.delta_heading % 360)
+            self.navdata[0]['psi'] += (self.speed * 30)
+            self.navdata[0]['psi'] = (self.navdata[0]['psi'] % 360)
 
     def reset(self):
         self.cease_flying = True
