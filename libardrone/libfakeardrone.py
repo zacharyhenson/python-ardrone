@@ -6,6 +6,7 @@ import traceback
 import math
 import threading
 import time
+import os
 
 def radians(degrees):
     return 0.0174532925 * (degrees % 360)
@@ -25,7 +26,8 @@ class ARDrone(object):
             self.image_shape = (720, 1280, 3)
         else:
             self.image_shape = (360, 640, 3)
-        self.overall_image = Image.open("/Users/adrian/Desktop/before.png")
+        image_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), "fakeground.png")
+        self.overall_image = Image.open(image_filename)
         self.pos = [0, 0, 0]
         self.heading = 0
         self.delta_pos = [0, 0, 0]
@@ -202,8 +204,9 @@ class ARDrone(object):
                                           int(3*this_image.size[0]/4), int(3*this_image.size[1]/4)))
             this_image = this_image.resize((self.image_shape[1], self.image_shape[0]))
             _im = np.array(this_image)
-            # Strip alpha channel
-            _im = np.delete(_im, 3, 2)
+            # Strip any alpha channel
+            if np.shape(_im)[2] == 4:
+                _im = np.delete(_im, 3, 2)
             return _im.reshape(self.image_shape)
         except:
             traceback.print_exc()
