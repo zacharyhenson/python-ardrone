@@ -212,7 +212,7 @@ class ARDrone(object):
             this_image = this_image.crop((int(this_image.size[0]/4), int(this_image.size[1]/4),
                                           int(3*this_image.size[0]/4), int(3*this_image.size[1]/4)))
             this_image = this_image.resize((self.image_shape[1], self.image_shape[0]))
-            _im = np.array(this_image)
+            _im = np.array(this_image)[::-1]
             # Strip any alpha channel
             if np.shape(_im)[2] == 4:
                 _im = np.delete(_im, 3, 2)
