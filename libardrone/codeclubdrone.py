@@ -82,7 +82,6 @@ def start_running_drone():
                         t.daemon = True
                         t.start()
         try:
-            # print pygame.image
             pixelarray = drone.get_image()
             if pixelarray is not None:
                 surface = pygame.surfarray.make_surface(pixelarray)
