@@ -185,8 +185,10 @@ class ARDrone(object):
     def get_image(self):
         try:
             altitude = 0
+            psi = 0
             with self.navdata_lock():
                 altitude = self.navdata[0]['altitude']
+                psi = self.navdata[0]['psi']
             if altitude == 0:
                 return np.zeros(self.image_shape)
             fraction_of_image_we_want_to_see = 1
@@ -198,8 +200,7 @@ class ARDrone(object):
             this_image = self.overall_image.crop((int(self.pos[0] - desired_width), int(self.pos[1] - desired_height),
                                                   int(self.pos[0] + desired_width), int(self.pos[1] + desired_height)))
             # Then rotate
-            rotation_angle = int(-(self.navdata[0]['psi'] % 360))
-            print("Rotating by %d" % rotation_angle)
+            rotation_angle = int(psi % 360)
             if rotation_angle != 0:
                 this_image = this_image.rotate(rotation_angle)
             # Now halve its size
