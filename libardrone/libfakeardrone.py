@@ -95,18 +95,20 @@ class ARDrone(object):
         """Make the drone hover."""
         with self.navdata_lock():
             self.delta_pos = [0, 0, 0]
+            self.rotation_to_do = 0
+
+    def _do_motion(self, angle):
+        with self.navdata_lock():
+            self.delta_pos[0] += 20 * self.speed * math.sin(radians(self.navdata[0]['psi'] + angle))
+            self.delta_pos[1] += 20 * self.speed * math.cos(radians(self.navdata[0]['psi'] + angle))
 
     def move_left(self):
         """Make the drone move left."""
-        with self.navdata_lock():
-            self.delta_pos[0] = self.speed * math.sin(radians(self.navdata[0]['psi'] - 90))
-            self.delta_pos[1] = self.speed * math.cos(radians(self.navdata[0]['psi'] - 90))
+        self._do_motion(-90)
 
     def move_right(self):
         """Make the drone move right."""
-        with self.navdata_lock():
-            self.delta_pos[0] = self.speed * math.sin(radians(self.navdata[0]['psi'] + 90))
-            self.delta_pos[1] = self.speed * math.cos(radians(self.navdata[0]['psi'] + 90))
+        self._do_motion(90)
 
     def move_up(self):
         """Make the drone rise upwards."""
@@ -120,15 +122,11 @@ class ARDrone(object):
 
     def move_forward(self):
         """Make the drone move forward."""
-        with self.navdata_lock():
-            self.delta_pos[0] = -20 * self.speed * math.sin(radians(self.navdata[0]['psi']))
-            self.delta_pos[1] = -20 * self.speed * math.cos(radians(self.navdata[0]['psi']))
+        self._do_motion(0)
 
     def move_backward(self):
         """Make the drone move backwards."""
-        with self.navdata_lock():
-            self.delta_pos[0] = 20 * self.speed * math.sin(radians(self.navdata[0]['psi']))
-            self.delta_pos[1] = 20 * self.speed * math.cos(radians(self.navdata[0]['psi']))
+        self._do_motion(180)
 
     def turn_left(self):
         """Make the drone rotate left."""
