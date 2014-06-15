@@ -92,7 +92,6 @@ class ARDrone(object):
         with self.navdata_lock():
             self.delta_pos[0] = self.speed * math.sin(radians(self.navdata[0]['psi'] - 90))
             self.delta_pos[1] = self.speed * math.cos(radians(self.navdata[0]['psi'] - 90))
-        print("Delta pos is %d" % (self.delta_pos[0]))
 
     def move_right(self):
         """Make the drone move right."""
