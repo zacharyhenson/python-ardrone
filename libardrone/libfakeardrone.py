@@ -211,3 +211,6 @@ class ARDrone(object):
 
     def get_navdata(self):
         return self.navdata
+
+    def get_image_shape(self):
+        return (self.image_shape[0], self.image_shape[1])

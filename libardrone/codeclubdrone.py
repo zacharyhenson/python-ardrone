@@ -19,12 +19,12 @@ clock = None
 def setup_drone(fake):
     global screen, drone, clock
     pygame.init()
-    W, H = 640, 480
-    screen = pygame.display.set_mode((W, H))
     if fake:
         drone = libfakeardrone.ARDrone(True)
     else:
         drone = libardrone.ARDrone(True)
+    (preferred_w, preferred_h) = drone.get_image_shape()
+    screen = pygame.display.set_mode((preferred_h, preferred_w)) # 270 degree rotation
     drone.reset()
     clock = pygame.time.Clock()
     time.sleep(2.0)
