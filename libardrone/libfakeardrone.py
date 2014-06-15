@@ -62,12 +62,10 @@ class ARDrone(object):
     def do_flying(self):
         while (not self.cease_flying) and (self.pos[2] > 0):
             with self.navdata_lock():
-                self.pos[0] += self.delta_pos[0]
-                self.pos[1] += self.delta_pos[1]
-                self.pos[2] += self.delta_pos[2]
+                for i in range(3):
+                    self.pos[i] += self.delta_pos[i]
                 if self.pos[2] < 0:
                     self.pos[2] = 0
-                print("Rotation to do %d" % (self.rotation_to_do))
                 if self.rotation_to_do > 0:
                     self.navdata[0]['psi'] += (self.speed * 5)
                     self.navdata[0]['psi'] = (self.navdata[0]['psi'] % 360)
@@ -181,7 +179,7 @@ class ARDrone(object):
         pass
 
     def halt(self):
-        pass
+        self.reset()
 
     def get_image(self):
         try:
