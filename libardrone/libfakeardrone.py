@@ -19,7 +19,7 @@ class ARDrone(object):
 
     def __init__(self, is_ar_drone_2=False, hd=False):
         self.navdata = dict()
-        self.navdata[0] = dict(zip(['ctrl_state', 'battery', 'theta', 'phi', 'psi', 'altitude', 'vx', 'vy', 'vz', 'num_frames'], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+        self.navdata[0] = dict(zip(['ctrl_state', 'battery', 'theta', 'phi', 'psi', 'altitude', 'vx', 'vy', 'vz', 'num_frames'], [0, 100, 0, 0, 0, 0, 0, 0, 0, 0]))
         self.speed = 0.1
         self.hd = hd
         if (self.hd):
@@ -28,12 +28,13 @@ class ARDrone(object):
             self.image_shape = (360, 640, 3)
         image_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), "fakeground.png")
         self.overall_image = Image.open(image_filename)
-        self.pos = [self.overall_image.size[0]/2, self.overall_image.size[1]/2, 0]
+        self.pos = [self.overall_image.size[0]/2, self.overall_image.size[1]/2]
         self.navdata['battery'] = 1
         self.delta_pos = [0, 0, 0]
         self.lock = threading.Lock()
         self.thread = None
         self.rotation_to_do = 0
+        self.landing = False
 
     def navdata_lock(self):
         class AcquiredLock(object):
@@ -52,20 +53,24 @@ class ARDrone(object):
         """Make the drone takeoff."""
         if self.thread != None:
             return
-        self.pos[2] = 10
-        self.delta_pos = [0,0,0]
+        if self.navdata[0]['altitude'] > 0 or self.landing:
+            return
+        self.navdata[0]['altitude'] = 0.1
+        self.delta_pos = [0,0,1.0]
         self.cease_flying = False
         self.thread = threading.Thread(target=ARDrone.do_flying, args=(self,))
         self.thread.daemon = True
         self.thread.start()
 
     def do_flying(self):
-        while (not self.cease_flying) and (self.pos[2] > 0):
+        while (not self.cease_flying) and (self.navdata[0]['altitude'] > 0):
             with self.navdata_lock():
-                for i in range(3):
+                for i in range(2):
                     self.pos[i] += self.delta_pos[i]
-                if self.pos[2] < 0:
-                    self.pos[2] = 0
+                self.navdata[0]['altitude'] += self.delta_pos[2]
+                if self.navdata[0]['altitude'] < 0:
+                    self.navdata[0]['altitude'] = 0
+                    self.landing = False
                 if self.rotation_to_do > 0:
                     self.navdata[0]['psi'] += (self.speed * 5)
                     self.navdata[0]['psi'] = (self.navdata[0]['psi'] % 360)
@@ -74,13 +79,17 @@ class ARDrone(object):
                     self.navdata[0]['psi'] -= (self.speed * 5)
                     self.navdata[0]['psi'] = (self.navdata[0]['psi'] % 360)
                     self.rotation_to_do += 1
+                if self.landing:
+                    self.navdata[0]['altitude'] = -self.speed
             time.sleep(0.1)
         self.thread = None
 
     def land(self):
         """Make the drone land."""
         with self.navdata_lock():
-            self.delta_pos[2] = -10
+            if self.navdata[0]['altitude'] == 0 or self.landing:
+                return
+            self.landing = True
 
     def hover(self):
         """Make the drone hover."""
@@ -182,7 +191,9 @@ class ARDrone(object):
 
     def get_image(self):
         try:
-            altitude = self.pos[2]
+            altitude = 0
+            with self.navdata_lock():
+                altitude = self.navdata[0]['altitude']
             if altitude == 0:
                 return np.zeros(self.image_shape)
             fraction_of_image_we_want_to_see = 1
