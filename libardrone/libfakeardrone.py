@@ -34,7 +34,7 @@ class ARDrone(object):
         self.lock = threading.Lock()
         self.thread = None
         self.rotation_to_do = 0
-        self.landing = False
+        self.landing = self.cease_flying = False
 
     def navdata_lock(self):
         class AcquiredLock(object):
@@ -51,7 +51,7 @@ class ARDrone(object):
 
     def takeoff(self):
         """Make the drone takeoff."""
-        if self.thread != None:
+        if self.thread is not None:
             return
         if self.navdata[0]['altitude'] > 0 or self.landing:
             return
@@ -71,14 +71,9 @@ class ARDrone(object):
                 if self.navdata[0]['altitude'] < 0:
                     self.navdata[0]['altitude'] = 0
                     self.landing = False
-                if self.rotation_to_do > 0:
-                    self.navdata[0]['psi'] += (self.speed * 5)
+                if self.rotation_to_do != 0:
+                    self.navdata[0]['psi'] += (self.speed * self.rotation_to_do)
                     self.navdata[0]['psi'] = (self.navdata[0]['psi'] % 360)
-                    self.rotation_to_do -= 1
-                if self.rotation_to_do < 0:
-                    self.navdata[0]['psi'] -= (self.speed * 5)
-                    self.navdata[0]['psi'] = (self.navdata[0]['psi'] % 360)
-                    self.rotation_to_do += 1
                 if self.landing:
                     self.navdata[0]['altitude'] = -self.speed
             time.sleep(0.1)
@@ -110,6 +105,14 @@ class ARDrone(object):
         """Make the drone move right."""
         self._do_motion(90)
 
+    def move_forward(self):
+        """Make the drone move forward."""
+        self._do_motion(0)
+
+    def move_backward(self):
+        """Make the drone move backwards."""
+        self._do_motion(180)
+
     def move_up(self):
         """Make the drone rise upwards."""
         with self.navdata_lock():
@@ -119,14 +122,6 @@ class ARDrone(object):
         """Make the drone decend downwards."""
         with self.navdata_lock():
             self.delta_pos[2] = -self.speed
-
-    def move_forward(self):
-        """Make the drone move forward."""
-        self._do_motion(0)
-
-    def move_backward(self):
-        """Make the drone move backwards."""
-        self._do_motion(180)
 
     def turn_left(self):
         """Make the drone rotate left."""
