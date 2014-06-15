@@ -184,8 +184,6 @@ class ARDrone(object):
 
     def get_image(self):
         try:
-            altitude = 0
-            psi = 0
             with self.navdata_lock():
                 altitude = self.navdata[0]['altitude']
                 psi = self.navdata[0]['psi']
