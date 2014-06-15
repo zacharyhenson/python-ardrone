@@ -39,23 +39,23 @@ def get_drone():
     return drone
 
 
-def bind_key(key, function):
-    keys[key] = function
+def bind_key(key, function, wait=True, label=None):
+    keys[key] = (function, wait, label)
 
 
 def bind_common_keys():
-    bind_key(pygame.K_ESCAPE, lambda: get_drone().reset())
-    bind_key(pygame.K_RETURN, lambda: get_drone().takeoff())
-    bind_key(pygame.K_SPACE, lambda: get_drone().takeoff())
-    bind_key(pygame.K_BACKSPACE, lambda: get_drone().reset())
-    bind_key(pygame.K_w, lambda: get_drone().move_forward())
-    bind_key(pygame.K_s, lambda: get_drone().move_backward())
-    bind_key(pygame.K_a, lambda: get_drone().move_left())
-    bind_key(pygame.K_d, lambda: get_drone().move_right())
-    bind_key(pygame.K_UP, lambda: get_drone().move_up())
-    bind_key(pygame.K_DOWN, lambda: get_drone().move_down())
-    bind_key(pygame.K_LEFT, lambda: get_drone().turn_left())
-    bind_key(pygame.K_RIGHT, lambda: get_drone().turn_right())
+    bind_key(pygame.K_ESCAPE, lambda: stop(), True, "Quit")
+    bind_key(pygame.K_RETURN, lambda: get_drone().takeoff(), True, "Takeoff")
+    bind_key(pygame.K_SPACE, lambda: get_drone().land(), True, "Land")
+    bind_key(pygame.K_BACKSPACE, lambda: get_drone().reset(), True, "Reset")
+    bind_key(pygame.K_w, lambda: get_drone().move_forward(), True, "Forward")
+    bind_key(pygame.K_s, lambda: get_drone().move_backward(), True, "Backward")
+    bind_key(pygame.K_a, lambda: get_drone().move_left(), True, "Go left")
+    bind_key(pygame.K_d, lambda: get_drone().move_right(), True, "Go right")
+    bind_key(pygame.K_UP, lambda: get_drone().move_up(), True, "Up")
+    bind_key(pygame.K_DOWN, lambda: get_drone().move_down(), True, "Down")
+    bind_key(pygame.K_LEFT, lambda: get_drone().turn_left(), True, "Yaw left")
+    bind_key(pygame.K_RIGHT, lambda: get_drone().turn_right(), True, "Yaw right")
 
     def set_speed(speed):
         get_drone().speed = speed
@@ -66,6 +66,7 @@ def bind_common_keys():
 
 
 def start_running_drone():
+    global running
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -74,10 +75,13 @@ def start_running_drone():
                 drone.hover()
             elif event.type == pygame.KEYDOWN:
                 if event.key in keys:
-                    action = keys[event.key]
-                    t = Thread(target=action)
-                    t.daemon = True
-                    t.start()
+                    (action, synchronous, _) = keys[event.key]
+                    if synchronous:
+                        action()
+                    else:
+                        t = Thread(target=action)
+                        t.daemon = True
+                        t.start()
         try:
             # print pygame.image
             pixelarray = drone.get_image()
@@ -91,6 +95,15 @@ def start_running_drone():
             f = pygame.font.Font(None, 20)
             hud = f.render('Battery: %i%%' % bat, True, hud_color)
             screen.blit(hud, (10, 10))
+            # List keys
+            y = 25
+            for key_code in keys.keys():
+                this_label = keys[key_code][2]
+                if this_label is not None:
+                    label = "%s: %s" % (pygame.key.name(key_code), this_label)
+                    key_text = f.render(label, True, hud_color)
+                    screen.blit(key_text, (10, y))
+                    y += 15
         except:
             pass
 
@@ -103,4 +116,5 @@ def start_running_drone():
     print("Ok.")
 
 def stop():
+    global running
     running = False
