@@ -30,6 +30,7 @@ def setup_drone():
     clock = pygame.time.Clock()
     time.sleep(2.0)
     drone.trim()
+    return drone
 
 
 def get_drone():

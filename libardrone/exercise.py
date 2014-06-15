@@ -2,8 +2,7 @@
 from codeclubdrone import *
 from pygame import *
 
-setup_drone()
-drone = get_drone()
+drone = setup_drone()
 bind_common_keys()
 
 def fly_around():
