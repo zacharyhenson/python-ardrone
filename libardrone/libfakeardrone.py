@@ -76,6 +76,7 @@ class ARDrone(object):
                     self.navdata[0]['psi'] = (self.navdata[0]['psi'] % 360)
                 if self.landing:
                     self.navdata[0]['altitude'] = -self.speed
+                print("Pos is %f,%f" % (self.pos[0], self.pos[1]))
             time.sleep(0.1)
         self.thread = None
 
@@ -200,16 +201,18 @@ class ARDrone(object):
             # Then rotate
             rotation_angle = int(psi % 360)
             if rotation_angle != 0:
-                this_image = this_image.rotate(rotation_angle)
-            # Now halve its size
-            this_image = this_image.crop((int(this_image.size[0]/4), int(this_image.size[1]/4),
-                                          int(3*this_image.size[0]/4), int(3*this_image.size[1]/4)))
+                this_image = this_image.rotate(-rotation_angle)
+            # Now shrink again
+            mid_x = this_image.size[0] / 2
+            mid_y = this_image.size[1] / 2
+            this_image = this_image.crop((int(mid_x - desired_width/2), int(mid_y - desired_width/2),
+                                          int(mid_x + desired_height/2), int(mid_y + desired_height/2)))
             this_image = this_image.resize((self.image_shape[1], self.image_shape[0]))
             _im = np.array(this_image)[::-1]
             # Strip any alpha channel
             if np.shape(_im)[2] == 4:
                 _im = np.delete(_im, 3, 2)
-            return _im.reshape(self.image_shape)
+            return _im
         except:
             traceback.print_exc()
 
