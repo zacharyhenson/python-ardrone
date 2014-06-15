@@ -198,7 +198,8 @@ class ARDrone(object):
             this_image = self.overall_image.crop((int(self.pos[0] - desired_width), int(self.pos[1] - desired_height),
                                                   int(self.pos[0] + desired_width), int(self.pos[1] + desired_height)))
             # Then rotate
-            rotation_angle = int(-self.navdata[0]['psi'] % 360)
+            rotation_angle = int(-(self.navdata[0]['psi'] % 360))
+            print("Rotating by %d" % rotation_angle)
             if rotation_angle != 0:
                 this_image = this_image.rotate(rotation_angle)
             # Now halve its size
