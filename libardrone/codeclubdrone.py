@@ -10,19 +10,18 @@ import libfakeardrone
 from threading import Thread
 
 drone = None
-FAKE = True
 running = True
 keys = dict()
 screen = None
 clock = None
 
 
-def setup_drone():
+def setup_drone(fake):
     global screen, drone, clock
     pygame.init()
     W, H = 640, 480
     screen = pygame.display.set_mode((W, H))
-    if FAKE:
+    if fake:
         drone = libfakeardrone.ARDrone(True)
     else:
         drone = libardrone.ARDrone(True)
@@ -39,7 +38,7 @@ def get_drone():
     return drone
 
 
-def bind_key(key, function, wait=True, label=None):
+def bind_key(key, function, wait=False, label=None):
     keys[key] = (function, wait, label)
 
 
