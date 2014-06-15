@@ -135,6 +135,8 @@ class ARDrone(object):
         self.at(at_config_ids , self.config_ids_string)
         self.at(at_config, "general:navdata_demo", "TRUE")
 
+    def get_image_shape(self):
+        return (self.image_shape[0], self.image_shape[1])
 
     def takeoff(self):
         """Make the drone takeoff."""
