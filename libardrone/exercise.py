@@ -26,7 +26,7 @@ def fly_around():
     drone.takeoff()
     drone.land()
 
-# The following means that whenever you press 'a',
+# The following means that whenever you press 'x',
 # your function 'fly_around' above will get run.
 # label="Fly around" means you'll get a nice reminder
 # on the screen stating what the key does.
