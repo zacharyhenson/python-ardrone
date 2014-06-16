@@ -85,7 +85,7 @@ def start_running_drone():
             pixelarray = drone.get_image()
             if pixelarray is not None:
                 surface = pygame.surfarray.make_surface(pixelarray)
-                rotsurface = pygame.transform.rotate(surface, 270)
+                rotsurface = pygame.transform.rotate(surface, 270) # anticlockwise!
                 screen.blit(rotsurface, (0, 0))
             # battery status
             hud_color = (255, 0, 0) if drone.navdata.get('drone_state', dict()).get('emergency_mask', 1) else (10, 10, 255)

@@ -27,9 +27,9 @@ class ARDrone(object):
         else:
             self.image_shape = (360, 640, 3)
         image_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), "fakeground.png")
-        self.overall_image = Image.open(image_filename)
+        self.overall_image = Image.open(image_filename).convert("RGB") # remove alpha
+
         self.pos = [self.overall_image.size[0]/2, self.overall_image.size[1]/2]
-        self.navdata['battery'] = 1
         self.delta_pos = [0, 0, 0]
         self.lock = threading.Lock()
         self.thread = None
@@ -194,9 +194,11 @@ class ARDrone(object):
             if altitude < 100:
                 fraction_of_image_we_want_to_see = altitude / 100.0
             desired_width = int(self.overall_image.size[0] * fraction_of_image_we_want_to_see)
-            desired_height = int(self.overall_image.size[1] * fraction_of_image_we_want_to_see)
+            desired_ratio = float(self.image_shape[0]) / self.image_shape[1]
+            desired_height = int(desired_width * desired_ratio)
             # First crop to twice the area which we want to see
-            this_image = self.overall_image.crop((int(self.pos[0] - desired_width), int(self.pos[1] - desired_height),
+            this_image = self.overall_image
+            this_image = this_image.crop((int(self.pos[0] - desired_width), int(self.pos[1] - desired_height),
                                                   int(self.pos[0] + desired_width), int(self.pos[1] + desired_height)))
             # Then rotate
             rotation_angle = int(psi % 360)
@@ -207,11 +209,10 @@ class ARDrone(object):
             mid_y = this_image.size[1] / 2
             this_image = this_image.crop((int(mid_x - desired_width/2), int(mid_y - desired_width/2),
                                           int(mid_x + desired_height/2), int(mid_y + desired_height/2)))
-            this_image = this_image.resize((self.image_shape[1], self.image_shape[0]))
-            _im = np.array(this_image)[::-1]
-            # Strip any alpha channel
-            if np.shape(_im)[2] == 4:
-                _im = np.delete(_im, 3, 2)
+            this_image = this_image.resize((self.image_shape[0], self.image_shape[1]))
+            # Rotate 90 due to weird AR.Drone rotation
+            this_image = this_image.rotate(270) # clockwise!
+            _im = np.array(this_image)
             return _im
         except:
             traceback.print_exc()
