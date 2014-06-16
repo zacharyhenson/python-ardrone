@@ -208,7 +208,7 @@ class ARDrone(object):
             mid_y = this_image.size[1] / 2
             this_image = this_image.crop((int(mid_x - desired_width/2), int(mid_y - desired_width/2),
                                           int(mid_x + desired_height/2), int(mid_y + desired_height/2)))
-            this_image = this_image.resize((self.image_shape[0], self.image_shape[1]))
+            this_image = this_image.resize((self.image_shape[1], self.image_shape[0]))
             # Rotate 90 due to weird AR.Drone rotation
             this_image = this_image.rotate(270) # clockwise!
             # PIL images result in arrays which are (rows, columns, rgb)
