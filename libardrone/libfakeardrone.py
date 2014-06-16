@@ -99,11 +99,11 @@ class ARDrone(object):
 
     def move_left(self):
         """Make the drone move left."""
-        self._do_motion(-90)
+        self._do_motion(90)
 
     def move_right(self):
         """Make the drone move right."""
-        self._do_motion(90)
+        self._do_motion(-90)
 
     def move_forward(self):
         """Make the drone move forward."""
