@@ -28,7 +28,6 @@ class ARDrone(object):
             self.image_shape = (360, 640, 3)
         image_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), "fakeground.png")
         self.overall_image = Image.open(image_filename).convert("RGB") # remove alpha
-
         self.pos = [self.overall_image.size[0]/2, self.overall_image.size[1]/2]
         self.delta_pos = [0, 0, 0]
         self.lock = threading.Lock()
@@ -212,7 +211,10 @@ class ARDrone(object):
             this_image = this_image.resize((self.image_shape[0], self.image_shape[1]))
             # Rotate 90 due to weird AR.Drone rotation
             this_image = this_image.rotate(270) # clockwise!
-            _im = np.array(this_image)
+            # PIL images result in arrays which are (rows, columns, rgb)
+            # PyGame (and thus libardrone users) expect (x, y, rgb)
+            # Hence we need to swap first two axes
+            _im = np.array(this_image).swapaxes(0, 1)
             return _im
         except:
             traceback.print_exc()
