@@ -126,12 +126,12 @@ class ARDrone(object):
     def turn_left(self):
         """Make the drone rotate left."""
         with self.navdata_lock():
-            self.rotation_to_do -= 5
+            self.rotation_to_do += 5
 
     def turn_right(self):
         """Make the drone rotate right."""
         with self.navdata_lock():
-            self.rotation_to_do += 5
+            self.rotation_to_do -= 5
 
     def reset(self):
         self.cease_flying = True
