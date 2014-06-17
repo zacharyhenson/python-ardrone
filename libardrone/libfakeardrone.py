@@ -75,7 +75,6 @@ class ARDrone(object):
                     self.navdata[0]['psi'] = (self.navdata[0]['psi'] % 360)
                 if self.landing:
                     self.navdata[0]['altitude'] = -self.speed
-                print("Pos is %f,%f" % (self.pos[0], self.pos[1]))
             time.sleep(0.1)
         self.thread = None
 
