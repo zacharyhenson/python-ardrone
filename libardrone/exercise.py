@@ -3,6 +3,7 @@
 
 from codeclubdrone import *
 from pygame import *
+import time
 
 # The next line gives you an 'object'
 # An 'object' is something a bit like a Sprite in Scratch
@@ -23,7 +24,29 @@ bind_common_keys()
 
 # Fill whatever you want into this function.
 def fly_around():
+    drone.speed = 0.3
     drone.takeoff()
+    drone.move_forward()
+    time.sleep(3)
+    drone.hover()
+    while drone.get_navdata()[0]['altitude'] < 25:
+        print("Up: Altitude is %f" % (drone.get_navdata()[0]['altitude']))
+        drone.move_up()
+        time.sleep(0.1)
+    while drone.get_navdata()[0]['altitude'] > 5:
+        print("Down: Altitude is %f" % (drone.get_navdata()[0]['altitude']))
+        drone.move_down()
+        time.sleep(0.1)
+    drone.hover()
+    angle_now = drone.get_navdata()[0]['psi']
+    print("Angle now is ",angle_now)
+    angle_needed = angle_now + 180
+    drone.turn_left()
+    while angle_now < angle_needed:
+        angle_now = drone.get_navdata()[0]['psi']
+        time.sleep(0.1)
+    drone.move_forward()
+    time.sleep(3)
     drone.land()
 
 # The following means that whenever you press 'x',
