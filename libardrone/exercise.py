@@ -39,14 +39,15 @@ def fly_around():
         time.sleep(0.1)
     drone.hover()
     angle_now = drone.get_navdata()[0]['psi']
-    print("Angle now is ",angle_now)
     angle_needed = angle_now + 180
     drone.turn_left()
     while angle_now < angle_needed:
         angle_now = drone.get_navdata()[0]['psi']
         time.sleep(0.1)
+    drone.hover()
     drone.move_forward()
     time.sleep(3)
+    drone.hover()
     drone.land()
 
 # The following means that whenever you press 'x',
