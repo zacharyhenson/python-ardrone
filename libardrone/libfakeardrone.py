@@ -16,6 +16,11 @@ Like libardrone, but not real.
 """
 
 class ARDrone(object):
+    IDLE = 0
+    TAKING_OFF = 1
+    FLYING = 2
+    LANDING = 3
+    STOPPING = 4
 
     def __init__(self, is_ar_drone_2=False, hd=False):
         self.navdata = dict()
@@ -33,7 +38,7 @@ class ARDrone(object):
         self.lock = threading.Lock()
         self.thread = None
         self.rotation_to_do = 0
-        self.landing = self.cease_flying = False
+        self.state = ARDrone.IDLE
 
     def navdata_lock(self):
         class AcquiredLock(object):
@@ -50,40 +55,48 @@ class ARDrone(object):
 
     def takeoff(self):
         """Make the drone takeoff."""
-        if self.thread is not None:
-            return
-        if self.navdata[0]['altitude'] > 0 or self.landing:
-            return
+        with self.navdata_lock():
+            if self.state == ARDrone.STOPPING:
+                return
+            if self.state == ARDrone.TAKING_OFF:
+                return
+            if self.state == ARDrone.FLYING:
+                return
         self.navdata[0]['altitude'] = 0.1
         self.delta_pos = [0,0,1.0]
-        self.cease_flying = False
         self.thread = threading.Thread(target=ARDrone.do_flying, args=(self,))
         self.thread.daemon = True
+        self.state = ARDrone.TAKING_OFF
         self.thread.start()
 
     def do_flying(self):
-        while (not self.cease_flying) and (self.navdata[0]['altitude'] > 0):
+        while (not self.state == ARDrone.STOPPING) and (self.navdata[0]['altitude'] > 0):
             with self.navdata_lock():
+                if self.state == ARDrone.TAKING_OFF:
+                    if self.navdata[0]['altitude'] < 10 :
+                        self.delta_pos[2] = 1.0
+                    else:
+                        self.state = ARDrone.FLYING
+                        self.delta_pos[2] = 0.0
+                if self.state == ARDrone.LANDING:
+                    self.delta_pos[2] = -1.0
                 for i in range(2):
                     self.pos[i] += self.delta_pos[i]
                 self.navdata[0]['altitude'] += self.delta_pos[2]
                 if self.navdata[0]['altitude'] < 0:
                     self.navdata[0]['altitude'] = 0
-                    self.landing = False
                 if self.rotation_to_do != 0:
                     self.navdata[0]['psi'] += (self.speed * self.rotation_to_do)
                     self.navdata[0]['psi'] = (self.navdata[0]['psi'] % 360)
-                if self.landing:
-                    self.navdata[0]['altitude'] = -self.speed
             time.sleep(0.1)
         self.thread = None
+        self.state = ARDrone.IDLE
 
     def land(self):
         """Make the drone land."""
         with self.navdata_lock():
-            if self.navdata[0]['altitude'] == 0 or self.landing:
-                return
-            self.landing = True
+            if self.state == ARDrone.FLYING or self.state == ARDrone.TAKING_OFF:
+                self.state = ARDrone.LANDING
 
     def hover(self):
         """Make the drone hover."""
@@ -133,9 +146,10 @@ class ARDrone(object):
             self.rotation_to_do -= 5
 
     def reset(self):
-        self.cease_flying = True
+        self.state = ARDrone.STOPPING
         if self.thread:
             self.thread.join()
+        self.state = ARDrone.IDLE
 
     def trim(self):
         pass
