@@ -27,6 +27,7 @@ def fly_around():
     drone.speed = 0.3
     drone.takeoff()
     drone.move_forward()
+    print("Waiting 3 secs...")
     time.sleep(3)
     drone.hover()
     while drone.get_navdata()[0]['altitude'] < 25:
