@@ -66,21 +66,25 @@ def bind_common_keys():
 
 def start_running_drone():
     global running
+    enqueued_actions = []
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 stop()
             elif event.type == pygame.KEYUP:
                 drone.hover()
+                for action in enqueued_actions:
+                    t = Thread(target=action)
+                    t.daemon = True
+                    t.start()
+                enqueued_actions = []
             elif event.type == pygame.KEYDOWN:
                 if event.key in keys:
                     (action, synchronous, _) = keys[event.key]
                     if synchronous:
                         action()
                     else:
-                        t = Thread(target=action)
-                        t.daemon = True
-                        t.start()
+                        enqueued_actions.append(action)
         try:
             pixelarray = drone.get_image()
             if pixelarray is not None:
