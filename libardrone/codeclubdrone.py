@@ -55,6 +55,11 @@ def bind_common_keys():
     bind_key(pygame.K_DOWN, lambda: get_drone().move_down(), True, "Down")
     bind_key(pygame.K_LEFT, lambda: get_drone().turn_left(), True, "Yaw left")
     bind_key(pygame.K_RIGHT, lambda: get_drone().turn_right(), True, "Yaw right")
+    bind_key(pygame.K_e, lambda: set_camera(1), True, "Downward camera")
+    bind_key(pygame.K_r, lambda: set_camera(0), True, "Forward camera")
+
+    def set_camera(camera):
+        get_drone().set_video_channel(get_drone().config_ids_string, camera)
 
     def set_speed(speed):
         get_drone().speed = speed
