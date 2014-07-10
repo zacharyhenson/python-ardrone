@@ -57,8 +57,8 @@ DEBUG = False
 # 524288:  "Landing"
 # 458752:  "Stabilizing"
 # 196608:  "Moving"
-# 262153 and 196613 and 262155 and 196614:  "Undefined"
-ctrl_state_dict={0:0, 131072:1, 393216:2, 393217:3, 262144:4, 524288:5, 458752:6, 196608:7, 262153:8, 196613:9, 262155:10, 196614:11}
+# 262153 and 196613 and 262155 and 196614 and 458753:  "Undefined"
+ctrl_state_dict={0:0, 131072:1, 393216:2, 393217:3, 262144:4, 524288:5, 458752:6, 196608:7, 262153:8, 196613:9, 262155:10, 196614:11, 458753: 12}
 
 
 class ARDrone(object):
@@ -203,6 +203,17 @@ class ARDrone(object):
         """
         self.speed = speed
 
+    def set_camera_view(self, downward):
+        """
+        Set which video camera is used. If 'downward' is true,
+        downward camera will be viewed - otherwise frontwards.
+        """
+        channel = None
+        if downward:
+            channel = 0
+        else:
+            channel = 1
+        self.set_video_channel(self.config_ids_string, channel)
 
     def at(self, cmd, *args, **kwargs):
         """Wrapper for the low level at commands.
@@ -246,7 +257,7 @@ class ARDrone(object):
 
     def set_video_channel(self, config_ids_string, channel):
         self.at(at_config_ids , config_ids_string)
-        self.at(at_config, "video:channel", channel)
+        self.at(at_config, "video:video_channel", channel)
 
     def set_max_bitrate(self, config_ids_string, max_bitrate):
         self.at(at_config_ids , config_ids_string)
@@ -484,7 +495,7 @@ def at(command, seq, params):
             param_str += ',"' + p + '"'
     msg = "AT*%s=%i%s\r" % (command, seq, param_str)
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.sendto(msg, ("192.168.1.1", ARDRONE_COMMAND_PORT))
+    sock.sendto(msg.encode("utf-8"), ("192.168.1.1", ARDRONE_COMMAND_PORT))
 
 def f2i(f):
     """Interpret IEEE-754 floating-point value as signed integer.
