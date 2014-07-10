@@ -64,10 +64,10 @@ def main():
                     running = False
                 # takeoff / land
                 elif event.key == pygame.K_RETURN:
-                    print "return"
+                    print("return")
                     drone.takeoff()
                 elif event.key == pygame.K_SPACE:
-                    print "space"
+                    print("space")
                     drone.land()
                 # emergency
                 elif event.key == pygame.K_BACKSPACE:
@@ -138,9 +138,9 @@ def main():
         clock.tick(50)
         pygame.display.set_caption("FPS: %.2f" % clock.get_fps())
 
-    print "Shutting down...",
+    print("Shutting down...")
     drone.halt()
-    print "Ok."
+    print("Ok.")
 
 def fly_around_school(drone):
     print "Taking off"
