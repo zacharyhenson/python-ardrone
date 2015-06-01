@@ -91,10 +91,8 @@ def main():
                     running = False
                 # takeoff / land
                 elif event.key == pygame.K_RETURN:
-                    print("return")
                     drone.takeoff()
                 elif event.key == pygame.K_SPACE:
-                    print("space")
                     drone.land()
                 # emergency
                 elif event.key == pygame.K_BACKSPACE:
