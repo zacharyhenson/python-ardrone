@@ -34,9 +34,46 @@ import pygame.surfarray
 import pygame.transform
 import libardrone
 
+
+def render_hud(drone, screen, H, W):
+
+    #coordinates are in W, -H
+    # battery status
+    f = pygame.font.Font(None, 20)
+    hud_color = (255, 0, 0) if drone.navdata.get('drone_state', dict()).get('emergency_mask', 1) else (10, 10, 255)
+    extra_hud_color = (242, 242, 10)
+
+
+    navdata = drone.navdata.get(0, dict())
+    bat = navdata.get('battery', 0)
+    
+    battery_hud = f.render('Battery: %i%%' % bat, True, hud_color)
+    screen.blit(battery_hud, (10, 10))
+
+    
+
+    indicators = dict()
+    indicators['Psi'] = navdata.get('psi', 0)
+    indicators['Altitude'] = navdata.get('altitude', 0)
+    indicators['Forward Tilt'] = navdata.get('theta', 0)
+    indicators['V_x'] = navdata.get('vx', 0)
+    indicators['V_y'] = navdata.get('vy', 0)
+    indicators['V_z'] = navdata.get('vz', 0)
+    coord_spacing = 15
+
+
+    print_height = H - len(indicators)*coord_spacing
+
+    for name in indicators:
+        compass_hud = f.render('%s: %i' % (name, indicators[name]), True, extra_hud_color)
+        screen.blit(compass_hud, (W-150, print_height))
+        print_height = print_height + coord_spacing
+
+
+
 def main():
     pygame.init()
-    W, H = 720, 1280
+    W, H = 640, 360
     screen = pygame.display.set_mode((W, H))
     drone = libardrone.ARDrone(True)
     drone.reset()
@@ -111,12 +148,9 @@ def main():
                 surface = pygame.surfarray.make_surface(pixelarray)
                 rotsurface = pygame.transform.rotate(surface, 270)
                 screen.blit(rotsurface, (0, 0))
-            # battery status
-            hud_color = (255, 0, 0) if drone.navdata.get('drone_state', dict()).get('emergency_mask', 1) else (10, 10, 255)
-            bat = drone.navdata.get(0, dict()).get('battery', 0)
-            f = pygame.font.Font(None, 20)
-            hud = f.render('Battery: %i%%' % bat, True, hud_color)
-            screen.blit(hud, (10, 10))
+
+            render_hud(drone, screen, H, W)
+
         except:
             pass
 
